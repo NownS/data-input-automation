@@ -18,7 +18,7 @@ cur = conn.cursor()
 
 def input_data(line):
     try:
-        skill, name, price, hour, date, duration, return_time, user_tag, url, site, difficulty, tool, curriculum, characteristic = line
+        skill, name, price, hour, date, duration, user_tag, url, site, difficulty, tool, curriculum, characteristic = line
         name.replace('\n', ' ')
         price = int(price)
         hour = float(hour) if hour.upper() != "UNKNOWN" else -1
@@ -26,6 +26,7 @@ def input_data(line):
         duration = int(duration) if duration != "∞" else 100000000
 
         optional = "False"
+        return_time = "UNKNOWN"
 
         return_time_type = ["FAST", "UNKNOWN", "LATE"]
         if return_time.upper() in return_time_type:
@@ -72,7 +73,17 @@ def input_data(line):
             if ut in tags:
                 user_tag_ids.append(tags[ut])
             else:
-                cur.execute('INSERT INTO tag(name, skill_id) VALUES(\'{}\',{}) RETURNING *'.format(ut, skill_id))
+                if ut in difficulty:
+                    tag_type_id = 1
+                elif ut in tool:
+                    tag_type_id = 2
+                elif ut in curriculum:
+                    tag_type_id = 3
+                elif ut in characteristic:
+                    tag_type_id = 4
+                else:
+                    raise Exception("태그 형식 에러")
+                cur.execute('INSERT INTO tag(name, skill_id, tag_type_id) VALUES(\'{}\',{}) RETURNING *'.format(ut, skill_id, tag_type_id))
                 user_tag_ids.append(cur.fetchall()[0][0])
                 conn.commit()
 
@@ -112,9 +123,9 @@ csv_file = open(filename, 'r', encoding='cp949')
 field = csv_file.readline().strip()
 print("필드 - " + field)
 
-if field != "스킬 카테고리,Name,가격,총 소요시간,개설일,반복 시청 가능 기간,질문 답변 응답시간,Tag,URL,사이트,난이도,사용툴,커리큘럼,강좌특성":
+if field != "스킬,Name,가격,총 소요시간,시작일,수강 기간,Tag,URL,강의사이트,난이도,사용툴,커리큘럼,강좌특성":
     print("필드 값이 적절하지 않습니다.")
-    print("적절한 필드 값 : 스킬 카테고리,Name,가격,총 소요시간,개설일,반복 시청 가능 기간,질문 답변 응답시간,Tag,URL,사이트,난이도,사용툴,커리큘럼,강좌특성")
+    print("적절한 필드 값 : 스킬,Name,가격,총 소요시간,시작일,수강 기간,Tag,URL,강의사이트,난이도,사용툴,커리큘럼,강좌특성")
     sys.exit()
 
 reader = csv.reader(csv_file)
